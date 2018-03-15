@@ -23,10 +23,12 @@ Usage
 
 Access dA-compatible webAPIs in the same way you'd access a local api::
 
+```python
     import WebAPI S = WebAPI(<ADDRESS>) 
     print(dir(S)) # print all available functions
     print(S.aFunction.__doc__) #print a doctstring
     print(S.api_md()) #print api in makdown format
     print(S.aFunction(arg1, arg2, kwarg1=1, kwarg2='aa', kwargs=True)) 
+```
 
 Function output is formated depending on the functions signature.
