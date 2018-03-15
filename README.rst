@@ -24,6 +24,7 @@ Usage
 Access dA-compatible webAPIs in the same way you'd access a local api:
 
 .. code:: python
+
     import WebAPI S = WebAPI(<ADDRESS>) 
     print(dir(S)) # print all available functions
     print(S.aFunction.__doc__) #print a doctstring
