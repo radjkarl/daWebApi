@@ -1,41 +1,58 @@
 import json
 from typing import Callable
 from csv import reader as csvreader
-from inspect import signature, _empty, ismodule
-
+from inspect import signature, _empty, isfunction, ismodule
 
 TYPE_ALIASES = {'file': bytes, '"OK"/error': str, 'html': str}
 
 
 def applyTyp(val: str, typ: type) -> object:
-    # execute val=typ(val)
-    if ismodule(typ):
+    '''execute val=typ(val)'''
+    if isfunction(typ) or ismodule(typ):
         typ = typ.__name__
-
+    
     typ = TYPE_ALIASES.get(typ, typ)
+    
     if typ is bytes:
-        return val
+        return bytes(val)
+
+    if type(val) in (bytes, bytearray):
+        val = val.decode()  # ensure dtype(str)
+    
     if typ is bool:
-        return val == b'True'
-    elif typ is str:
-        if type(val) in (bytes, bytearray):
-            val = val.decode()
+        return val == 'True'
+    
+    if typ is str:
         # remove trailing '":
         if len(val) and (val[0] == '"' and val[-1] == '"' or
                          val[0] == "'" and val[-1] == "'"):
             val = val[1:-1]
         return val
-    elif typ == 'json':
-        return json.loads(val)
-    elif typ == 'csv':
-        if type(val) is bytes:
-            val = val.decode()
-        if len(val) == 1:
-            return []  # val is empty
-        out = list(csvreader(val.split('\n')))
-        if len(out) == 1:
-            out = out[0]
-        return out
+    
+    if typ is list:
+        return val.split(',')
+    
+    if type(typ) is str:
+        if typ == 'path':
+            # is urls spaces are converted to %20 ... and \ -> %5C
+            for key, repl in {'%20':' ', '%5C':r'\\'}.items():
+                val = val.replace(key, repl)
+            return val
+        if typ == 'json':
+            return json.loads(val)
+        if typ == 'csv':
+            if len(val) == 1:
+                return []  # val is empty
+            out = list(csvreader(val.split('\n')))
+            if len(out) == 1:
+                out = out[0]
+            return out
+        if typ == 'status: msg':
+            i = val.index(": ")
+            status = val[:i]
+            msg = val[i + 2:]
+            return status, msg
+        
     return typ(val)
 
 
@@ -53,14 +70,13 @@ def _formatArgs(fn: Callable, args: list, kwargs: dict) -> (list, dict):
             if p.default is not _empty:
                 typ = type(p.default)
                 if typ is not None:
-                    try:
-                        # change ftype, if kwarg exists:
+                    try:  # change ftype, if kwarg exists:
                         kwargs[p.name] = applyTyp(kwargs[p.name], typ)
                     except KeyError:
                         pass
 
 
-def parseArgStr(fn: Callable, s: str)->(list, dict):
+def parseArgStr(fn: Callable, s: str) -> (list, dict):
     '''
     parse string [s] containing *args and **kwargs and
     set dtype corresponding to [fn]s signature
@@ -85,7 +101,7 @@ def parseArgStr(fn: Callable, s: str)->(list, dict):
 # @cython.compile
 
 
-def _split(s: str, nargs: int)->list:
+def _split(s: str, nargs: int) -> list:
     # split s into pieces using , separator
     # ignore commas within (), {}, '', ""
     b0 = 0  # (
@@ -131,7 +147,7 @@ def _split(s: str, nargs: int)->list:
     return pieces
 
 
-def _parse(s: str, nargs: int)->(list, dict):
+def _parse(s: str, nargs: int) -> (list, dict):
     args, kwargs = [], {}
 
     pieces = _split(s, nargs)

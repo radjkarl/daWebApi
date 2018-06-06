@@ -7,7 +7,6 @@ usage:
 	 sdist upload	... build the package and upload in to pyPI
 '''
 
-
 from setuptools import setup, find_packages
 import os
 
@@ -25,7 +24,7 @@ def read(*paths):
 
 setup(
     name='dAwebAPI',
-    version='0.1',
+    version='0.2',
     author='Karl Bedrich',
     author_email='karl.bedrich@nus.edu.sg',
     url='https://github.com/radjkarl/daWebApi',
@@ -51,8 +50,8 @@ setup(
     scripts=[] if not os.path.exists('bin') else [
         os.path.join('bin', x) for x in os.listdir('bin')],
     long_description=(
-        read('README.rst') + '\n\n' +
-        read('CHANGES.rst') + '\n\n' +
+        read('README.rst') + '\n\n' + 
+        read('CHANGES.rst') + '\n\n' + 
         read('AUTHORS.rst')
     ),
 )
